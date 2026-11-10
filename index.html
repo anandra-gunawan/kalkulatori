@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Penghitung Pengeluaran</title>
+<style>
+  :root{
+    --bg:#0b1220;
+    --card:rgba(30,41,59,.72);
+    --border:rgba(148,163,184,.18);
+    --text:#e2e8f0;
+    --muted:#94a3b8;
+    --green:#34d399;
+    --blue:#38bdf8;
+    --amber:#fbbf24;
+    --purple:#a78bfa;
+    --red:#f87171;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    background:
+      radial-gradient(900px 500px at 10% -10%, #1e3a5f 0%, transparent 60%),
+      radial-gradient(800px 500px at 100% 0%, #1e293b 0%, transparent 55%),
+      var(--bg);
+    background-attachment:fixed;
+    color:var(--text);
+    min-height:100vh;
+    padding:28px 16px 70px;
+  }
+
+  .app{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+
+  header h1{
+    font-size:clamp(22px,4vw,30px);
+    font-weight:800;letter-spacing:-.5px;
+    background:linear-gradient(90deg,#34d399,#38bdf8);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  header p{color:var(--muted);font-size:14px;margin-top:6px}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:16px;padding:20px;
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:0 14px 34px rgba(0,0,0,.28);
+  }
+  .card h2{
+    font-size:15px;font-weight:700;margin-bottom:16px;
+    display:flex;align-items:center;gap:8px;color:#f1f5f9;
+    flex-wrap:wrap;
+  }
+  .card h2 .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--green);box-shadow:0 0 12px var(--green);
+  }
+  .card h2 .subtitle{
+    margin-left:auto;font-size:12px;font-weight:500;
+    color:var(--muted);text-transform:none;letter-spacing:0;
+  }
+
+  /* ---------- Form ---------- */
+  .form-grid{
+    display:grid;grid-template-columns:1.7fr 1fr 1fr auto;
+    gap:12px;align-items:end;
+  }
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field label{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.3px}
+
+  input,select{
+    width:100%;padding:11px 13px;border-radius:10px;
+    border:1px solid var(--border);background:#0f172a;
+    color:var(--text);font-size:14px;font-family:inherit;
+    outline:none;transition:.18s;
+  }
+  input::placeholder{color:#475569}
+  input:focus,select:focus{
+    border-color:var(--green);
+    box-shadow:0 0 0 3px rgba(52,211,153,.15);
+  }
+  select{cursor:pointer}
+
+  .btn{
+    padding:11px 20px;border:none;border-radius:10px;
+    font-size:14px;font-weight:700;font-family:inherit;
+    cursor:pointer;transition:.18s;white-space:nowrap;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,#34d399,#10b981);
+    color:#06281d;box-shadow:0 6px 18px rgba(16,185,129,.28);
+  }
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 9px 22px rgba(16,185,129,.4)}
+  .btn-primary:active{transform:translateY(0)}
+  .btn-ghost{
+    background:transparent;color:var(--muted);
+    border:1px solid var(--border);
+  }
+  .btn-ghost:hover{color:var(--red);border-color:rgba(248,113,113,.5)}
+
+  /* ---------- Tabel ---------- */
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{
+    text-align:left;font-size:11px;text-transform:uppercase;
+    letter-spacing:.7px;color:var(--muted);
+    padding:8px 10px;border-bottom:1px solid var(--border);font-weight:700;
+    white-space:nowrap;
+  }
+  td{padding:10px;border-bottom:1px solid rgba(148,163,184,.08);white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:rgba(148,163,184,.05)}
+  .num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  .empty{text-align:center;color:var(--muted);padding:26px 10px;font-size:14px}
+
+  .badge{
+    display:inline-block;padding:3px 9px;border-radius:20px;
+    font-size:11px;font-weight:700;text-transform:capitalize;
+  }
+  .badge.harian{background:rgba(52,211,153,.14);color:var(--green)}
+  .badge.bulanan{background:rgba(56,189,248,.14);color:var(--blue)}
+  .badge.tahunan{background:rgba(167,139,250,.14);color:var(--purple)}
+
+  /* ---------- Tombol aksi baris ---------- */
+  .row-actions{text-align:right;white-space:nowrap}
+  .btn-act{
+    border:none;border-radius:8px;width:28px;height:28px;
+    cursor:pointer;font-size:13px;font-weight:700;
+    transition:.18s;line-height:1;padding:0;vertical-align:middle;
+  }
+  .btn-edit{background:rgba(56,189,248,.12);color:var(--blue)}
+  .btn-edit:hover{background:rgba(56,189,248,.28)}
+  .del{
+    background:rgba(248,113,113,.1);color:var(--red);
+    border:none;border-radius:8px;width:28px;height:28px;
+    cursor:pointer;font-size:13px;font-weight:700;transition:.18s;
+    margin-left:4px;line-height:1;padding:0;vertical-align:middle;
+  }
+  .del:hover{background:rgba(248,113,113,.25)}
+  .btn-save{background:rgba(52,211,153,.18);color:var(--green)}
+  .btn-save:hover{background:rgba(52,211,153,.34)}
+  .btn-cancel{
+    background:rgba(148,163,184,.14);color:#cbd5e1;margin-left:4px;
+  }
+  .btn-cancel:hover{background:rgba(148,163,184,.3);color:#f1f5f9}
+
+  /* ---------- Mode edit ---------- */
+  tr.editing{background:rgba(52,211,153,.08)}
+  tr.editing:hover{background:rgba(52,211,153,.12)}
+  .edit-input{
+    padding:7px 10px;font-size:13px;border-radius:8px;
+    border:1px solid rgba(52,211,153,.5);
+    background:#0f172a;color:var(--text);font-family:inherit;
+    outline:none;transition:.15s;
+  }
+  .edit-input:focus{
+    border-color:var(--green);
+    box-shadow:0 0 0 3px rgba(52,211,153,.18);
+  }
+  .edit-input[data-field="nama"]{width:100%;min-width:140px}
+  .edit-input[data-field="jumlah"]{width:110px;text-align:right}
+  .edit-input[data-field="frekuensi"]{padding:7px 8px;cursor:pointer}
+
+  .row-today{background:rgba(52,211,153,.10)}
+  .row-today td:first-child{color:var(--green);font-weight:700}
+  .row-weekend td{color:#94a3b8}
+  .row-weekend td:first-child{color:#cbd5e1}
+
+  .total-col{color:var(--green)}
+  .total-row td{
+    border-top:2px solid var(--border);
+    font-weight:800;padding-top:13px;
+    background:rgba(52,211,153,.04);color:#f1f5f9;
+  }
+  .total-row td:last-child{color:var(--green)}
+
+  /* ---------- Pengaturan ---------- */
+  .setting-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+  }
+
+  /* ---------- Statistik ---------- */
+  .stats{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));
+    gap:14px;
+  }
+  .stat{
+    position:relative;
+    background:linear-gradient(160deg,rgba(30,41,59,.9),rgba(15,23,42,.9));
+    border:1px solid var(--border);border-radius:14px;
+    padding:16px 16px 16px 18px;overflow:hidden;
+  }
+  .stat::before{
+    content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+    background:var(--c,var(--green));
+  }
+  .stat .lbl{font-size:11.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+  .stat .val{
+    font-size:clamp(18px,2.6vw,23px);font-weight:800;margin-top:7px;
+    font-variant-numeric:tabular-nums;letter-spacing:-.5px;color:var(--c,#fff);
+  }
+  .stat .sub{font-size:12px;color:var(--muted);margin-top:5px}
+
+  .proyeksi-total{
+    margin-top:16px;padding:16px 18px;border-radius:14px;
+    background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(56,189,248,.10));
+    border:1px solid rgba(52,211,153,.3);
+    display:flex;flex-wrap:wrap;justify-content:space-between;
+    align-items:center;gap:10px;
+  }
+  .proyeksi-total .lbl{font-size:13px;color:#cbd5e1;font-weight:600}
+  .proyeksi-total .big{
+    font-size:clamp(20px,3.4vw,28px);font-weight:800;
+    background:linear-gradient(90deg,#34d399,#38bdf8);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    font-variant-numeric:tabular-nums;
+  }
+
+  @media (max-width:760px){
+    .form-grid{grid-template-columns:1fr 1fr}
+    .form-grid .field:first-child{grid-column:1/-1}
+    .form-grid .btn{grid-column:1/-1;padding:13px}
+    .setting-grid{grid-template-columns:1fr}
+    .card{padding:16px}
+    .card h2 .subtitle{margin-left:0;width:100%}
+  }
+
+  footer{text-align:center;color:#475569;font-size:12px;margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header>
+    <h1>💰 Penghitung Pengeluaran</h1>
+    <p>Catat pengeluaran harian, bulanan, dan tahunan — lengkap dengan akumulasi per hari, per bulan, dan per tahun.</p>
+  </header>
+
+  <!-- ============ INPUT ============ -->
+  <section class="card">
+    <h2><span class="dot"></span> Tambah Pengeluaran</h2>
+    <form id="form">
+      <div class="form-grid">
+        <div class="field">
+          <label for="nama">Nama Pengeluaran</label>
+          <input id="nama" type="text" placeholder="Contoh: Kopi pagi" maxlength="40" required>
+        </div>
+        <div class="field">
+          <label for="jumlah">Jumlah (Rp)</label>
+          <input id="jumlah" type="number" min="0" step="500" placeholder="15000" required>
+        </div>
+        <div class="field">
+          <label for="frekuensi">Frekuensi</label>
+          <select id="frekuensi">
+            <option value="harian">Per Hari</option>
+            <option value="bulanan">Per Bulan</option>
+            <option value="tahunan">Per Tahun</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">+ Tambah</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ============ DAFTAR ============ -->
+  <section class="card">
+    <h2><span class="dot" style="background:var(--blue);box-shadow:0 0 12px var(--blue)"></span>
+      Daftar Pengeluaran
+      <button id="reset" class="btn btn-ghost" style="margin-left:auto;padding:6px 12px;font-size:12px">Hapus Semua</button>
+    </h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nama</th>
+            <th class="num">Jumlah</th>
+            <th>Frekuensi</th>
+            <th class="num">Per Bulan</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="daftar"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ PENGATURAN ============ -->
+  <section class="card">
+    <h2><span class="dot" style="background:var(--amber);box-shadow:0 0 12px var(--amber)"></span> Pengaturan Perhitungan</h2>
+    <div class="setting-grid">
+      <div class="field">
+        <label for="bulan">Bulan Acuan</label>
+        <select id="bulan"></select>
+      </div>
+      <div class="field">
+        <label for="tahun">Tahun Acuan</label>
+        <input id="tahun" type="number" min="2000" max="2200" step="1">
+      </div>
+      <div class="field">
+        <label for="proyeksi">Proyeksi Sampai (tahun)</label>
+        <input id="proyeksi" type="number" min="1" max="50" step="1">
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RINGKASAN ============ -->
+  <section class="card">
+    <h2><span class="dot" style="background:var(--purple);box-shadow:0 0 12px var(--purple)"></span> Ringkasan</h2>
+
+    <div class="stats">
+      <div class="stat" style="--c:var(--green)">
+        <div class="lbl">Per Hari</div>
+        <div class="val" id="valHarian">Rp 0</div>
+        <div class="sub" id="subHarian">rata-rata harian</div>
+      </div>
+      <div class="stat" style="--c:var(--amber)">
+        <div class="lbl">Sampai Akhir Bulan</div>
+        <div class="val" id="valAkhirBulan">Rp 0</div>
+        <div class="sub" id="subAkhirBulan">—</div>
+      </div>
+      <div class="stat" style="--c:var(--blue)">
+        <div class="lbl">Per Bulan</div>
+        <div class="val" id="valBulanan">Rp 0</div>
+        <div class="sub" id="subBulanan">—</div>
+      </div>
+      <div class="stat" style="--c:var(--purple)">
+        <div class="lbl">Per Tahun</div>
+        <div class="val" id="valTahunan">Rp 0</div>
+        <div class="sub" id="subTahunan">—</div>
+      </div>
+    </div>
+
+    <div class="proyeksi-total">
+      <div>
+        <div class="lbl" id="lblProyeksi">Total Proyeksi</div>
+        <div class="sub" style="margin-top:4px" id="subProyeksi">—</div>
+      </div>
+      <div class="big" id="valProyeksi">Rp 0</div>
+    </div>
+  </section>
+
+  <!-- ============ RINCIAN PER HARI (AKUMULASI) ============ -->
+  <section class="card">
+    <h2><span class="dot" style="background:var(--green);box-shadow:0 0 12px var(--green)"></span>
+      Akumulasi Per Hari <span class="subtitle" id="subTitleHarian"></span>
+    </h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tgl</th>
+            <th>Hari</th>
+            <th class="num">Akumulasi</th>
+          </tr>
+        </thead>
+        <tbody id="rincianHarian"></tbody>
+        <tfoot id="footerHarian"></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ RINCIAN PER BULAN (AKUMULASI) ============ -->
+  <section class="card">
+    <h2><span class="dot" style="background:var(--blue);box-shadow:0 0 12px var(--blue)"></span>
+      Akumulasi Per Bulan <span class="subtitle" id="subTitleBulanan"></span>
+    </h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Bulan</th>
+            <th>Hari</th>
+            <th class="num">Akumulasi</th>
+          </tr>
+        </thead>
+        <tbody id="rincianBulanan"></tbody>
+        <tfoot id="footerBulanan"></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ RINCIAN PER TAHUN (AKUMULASI) ============ -->
+  <section class="card">
+    <h2><span class="dot" style="background:var(--purple);box-shadow:0 0 12px var(--purple)"></span>
+      Akumulasi Per Tahun <span class="subtitle" id="subTitleTahunan"></span>
+    </h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tahun</th>
+            <th>Keterangan</th>
+            <th class="num">Akumulasi</th>
+          </tr>
+        </thead>
+        <tbody id="rincianTahunan"></tbody>
+        <tfoot id="footerTahunan"></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <footer>Data tersimpan otomatis di browser Anda.</footer>
+</div>
+
+<script>
+/* =====================================================
+   KONSTANTA & STATE
+   ===================================================== */
+const BULAN = ['Januari','Februari','Maret','April','Mei','Juni',
+               'Juli','Agustus','September','Oktober','November','Desember'];
+const HARI  = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const KEY   = 'penghitung-pengeluaran-v1';
+
+const state = {
+  items: [],
+  bulan: new Date().getMonth(),
+  tahun: new Date().getFullYear(),
+  tahunProyeksi: 5
+};
+
+/* id item yang sedang diedit (null = tidak ada) */
+let editingId = null;
+
+const $   = id => document.getElementById(id);
+const fmt = n => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+const hariDalamBulan = (y, m) => new Date(y, m + 1, 0).getDate();
+const isLeapYear = y => (y % 4 === 0 && y % 100 !== 0) || (y % 400 === 0);
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+
+/* ---------- Penyimpanan lokal ---------- */
+function simpan(){
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+}
+function muat(){
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (Array.isArray(data.items)) state.items = data.items;
+    if (typeof data.bulan === 'number') state.bulan = data.bulan;
+    if (typeof data.tahun === 'number') state.tahun = data.tahun;
+    if (typeof data.tahunProyeksi === 'number') state.tahunProyeksi = data.tahunProyeksi;
+  } catch(e){}
+}
+
+/* =====================================================
+   HELPER PERHITUNGAN
+   ===================================================== */
+function getTotals(){
+  let harian = 0, bulanan = 0, tahunan = 0;
+  state.items.forEach(it => {
+    const j = Number(it.jumlah) || 0;
+    if (it.frekuensi === 'harian')       harian  += j;
+    else if (it.frekuensi === 'bulanan') bulanan += j;
+    else                                 tahunan += j;
+  });
+  return { harian, bulanan, tahunan };
+}
+
+function totalBulanFor(y, m, totals){
+  const dim = hariDalamBulan(y, m);
+  return totals.harian * dim + totals.bulanan + totals.tahunan / 12;
+}
+
+function totalTahunFor(y, totals){
+  let t = 0;
+  for (let m = 0; m < 12; m++) t += totalBulanFor(y, m, totals);
+  return t;
+}
+
+function perBulanItem(it, dim){
+  const j = Number(it.jumlah) || 0;
+  if (it.frekuensi === 'harian')  return j * dim;
+  if (it.frekuensi === 'bulanan') return j;
+  return j / 12;
+}
+
+/* =====================================================
+   RENDER DAFTAR (mendukung mode edit inline)
+   ===================================================== */
+function renderDaftar(){
+  const tbody = $('daftar');
+  const dim = hariDalamBulan(state.tahun, state.bulan);
+
+  /* Jaga-jaga: kalau item yang diedit sudah tidak ada, reset */
+  if (editingId && !state.items.find(x => x.id === editingId)) {
+    editingId = null;
+  }
+
+  if (state.items.length === 0){
+    tbody.innerHTML =
+      '<tr><td colspan="5" class="empty">Belum ada pengeluaran. Tambahkan lewat form di atas 👆</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = state.items.map(it => {
+    /* ---- BARIS MODE EDIT ---- */
+    if (it.id === editingId){
+      return `<tr class="editing" data-id="${it.id}">
+        <td>
+          <input class="edit-input" data-field="nama" type="text"
+                 maxlength="40" value="${escapeHtml(it.nama)}">
+        </td>
+        <td class="num">
+          <input class="edit-input" data-field="jumlah" type="number"
+                 min="0" step="500" value="${it.jumlah}">
+        </td>
+        <td>
+          <select class="edit-input" data-field="frekuensi">
+            <option value="harian"  ${it.frekuensi==='harian' ?'selected':''}>Per Hari</option>
+            <option value="bulanan" ${it.frekuensi==='bulanan'?'selected':''}>Per Bulan</option>
+            <option value="tahunan" ${it.frekuensi==='tahunan'?'selected':''}>Per Tahun</option>
+          </select>
+        </td>
+        <td class="num">${fmt(perBulanItem(it, dim))}</td>
+        <td class="row-actions">
+          <button class="btn-act btn-save"   data-id="${it.id}" title="Simpan (Enter)">✓</button>
+          <button class="btn-act btn-cancel" data-id="${it.id}" title="Batal (Esc)">✕</button>
+        </td>
+      </tr>`;
+    }
+
+    /* ---- BARIS NORMAL ---- */
+    return `<tr>
+      <td>${escapeHtml(it.nama)}</td>
+      <td class="num">${fmt(it.jumlah)}</td>
+      <td><span class="badge ${it.frekuensi}">${it.frekuensi}</span></td>
+      <td class="num">${fmt(perBulanItem(it, dim))}</td>
+      <td class="row-actions">
+        <button class="btn-act btn-edit" data-id="${it.id}" title="Edit">✎</button>
+        <button class="del"              data-id="${it.id}" title="Hapus">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* =====================================================
+   RENDER RINGKASAN
+   ===================================================== */
+function renderHasil(){
+  const y = state.tahun, m = state.bulan;
+  const dim = hariDalamBulan(y, m);
+  const totals = getTotals();
+
+  const perBulan = totalBulanFor(y, m, totals);
+  const perHari  = perBulan / dim;
+  const perTahun = totalTahunFor(y, totals);
+
+  const now = new Date();
+  const bulanIni = now.getFullYear() === y && now.getMonth() === m;
+  const sisaHari = bulanIni ? (dim - now.getDate() + 1) : dim;
+  const sampaiAkhirBulan = perHari * sisaHari;
+
+  const n = Math.max(1, Math.min(50, parseInt(state.tahunProyeksi) || 1));
+  let proyeksiTotal = 0;
+  for (let i = 0; i < n; i++) proyeksiTotal += totalTahunFor(y + i, totals);
+
+  $('valHarian').textContent     = fmt(perHari);
+  $('subHarian').textContent     = `rata-rata ${BULAN[m].toLowerCase()} ${y}`;
+
+  $('valAkhirBulan').textContent = fmt(sampaiAkhirBulan);
+  $('subAkhirBulan').textContent = `${sisaHari} hari tersisa`;
+
+  $('valBulanan').textContent    = fmt(perBulan);
+  $('subBulanan').textContent    = `${BULAN[m]} ${y} · ${dim} hari`;
+
+  $('valTahunan').textContent    = fmt(perTahun);
+  $('subTahunan').textContent    = `total tahun ${y}`;
+
+  $('valProyeksi').textContent   = fmt(proyeksiTotal);
+  $('lblProyeksi').textContent   = `Total Proyeksi ${n} Tahun`;
+  $('subProyeksi').textContent   = `${fmt(perTahun)} × ${n} tahun ≈ ${fmt(proyeksiTotal)}`;
+}
+
+/* =====================================================
+   AKUMULASI PER HARI
+   ===================================================== */
+function renderRincianHarian(){
+  const y = state.tahun, m = state.bulan;
+  const dim = hariDalamBulan(y, m);
+  const totals = getTotals();
+  const tbody = $('rincianHarian');
+  const tfoot = $('footerHarian');
+
+  $('subTitleHarian').textContent = `${BULAN[m]} ${y} · ${dim} hari`;
+
+  if (state.items.length === 0){
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">Belum ada data pengeluaran.</td></tr>';
+    tfoot.innerHTML = '';
+    return;
+  }
+
+  const perHari = totalBulanFor(y, m, totals) / dim;
+  const today = new Date();
+  const isThisMonth = today.getFullYear() === y && today.getMonth() === m;
+
+  let rows = '';
+  let akumulasi = 0;
+  for (let d = 1; d <= dim; d++){
+    akumulasi += perHari;
+    const date = new Date(y, m, d);
+    const dayName = HARI[date.getDay()];
+    const isToday = isThisMonth && today.getDate() === d;
+    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+    rows += `<tr class="${isToday ? 'row-today' : ''}${isWeekend ? ' row-weekend' : ''}">
+      <td>${d}</td>
+      <td>${dayName}</td>
+      <td class="num total-col">${fmt(akumulasi)}</td>
+    </tr>`;
+  }
+  tbody.innerHTML = rows;
+
+  tfoot.innerHTML = `<tr class="total-row">
+    <td colspan="2">Total Akhir ${BULAN[m]} ${y}</td>
+    <td class="num">${fmt(akumulasi)}</td>
+  </tr>`;
+}
+
+/* =====================================================
+   AKUMULASI PER BULAN
+   ===================================================== */
+function renderRincianBulanan(){
+  const y = state.tahun;
+  const totals = getTotals();
+  const tbody = $('rincianBulanan');
+  const tfoot = $('footerBulanan');
+
+  $('subTitleBulanan').textContent = `Tahun ${y}`;
+
+  if (state.items.length === 0){
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">Belum ada data pengeluaran.</td></tr>';
+    tfoot.innerHTML = '';
+    return;
+  }
+
+  const today = new Date();
+  let akumulasi = 0;
+  let rows = '';
+
+  for (let m = 0; m < 12; m++){
+    akumulasi += totalBulanFor(y, m, totals);
+    const dim = hariDalamBulan(y, m);
+    const isThisMonth = today.getFullYear() === y && today.getMonth() === m;
+    rows += `<tr class="${isThisMonth ? 'row-today' : ''}">
+      <td>${BULAN[m]}</td>
+      <td>${dim} hari</td>
+      <td class="num total-col">${fmt(akumulasi)}</td>
+    </tr>`;
+  }
+  tbody.innerHTML = rows;
+
+  tfoot.innerHTML = `<tr class="total-row">
+    <td colspan="2">Total Akhir ${y}</td>
+    <td class="num">${fmt(akumulasi)}</td>
+  </tr>`;
+}
+
+/* =====================================================
+   AKUMULASI PER TAHUN
+   ===================================================== */
+function renderRincianTahunan(){
+  const y = state.tahun;
+  const totals = getTotals();
+  const n = Math.max(1, Math.min(50, parseInt(state.tahunProyeksi) || 1));
+  const tbody = $('rincianTahunan');
+  const tfoot = $('footerTahunan');
+
+  $('subTitleTahunan').textContent = n > 1
+    ? `${y} – ${y + n - 1} · ${n} tahun`
+    : `${y}`;
+
+  if (state.items.length === 0){
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">Belum ada data pengeluaran.</td></tr>';
+    tfoot.innerHTML = '';
+    return;
+  }
+
+  let akumulasi = 0;
+  let rows = '';
+  for (let i = 0; i < n; i++){
+    const yr = y + i;
+    akumulasi += totalTahunFor(yr, totals);
+    const dimYr = isLeapYear(yr) ? 366 : 365;
+    const label = isLeapYear(yr) ? `${dimYr} hari · kabisat` : `${dimYr} hari`;
+    rows += `<tr>
+      <td>${yr} <span style="color:var(--muted);font-size:11px">(ke-${i+1})</span></td>
+      <td style="color:var(--muted);font-size:12.5px">${label}</td>
+      <td class="num total-col">${fmt(akumulasi)}</td>
+    </tr>`;
+  }
+  tbody.innerHTML = rows;
+
+  tfoot.innerHTML = `<tr class="total-row">
+    <td colspan="2">Total Akhir ${n} Tahun (${y}–${y + n - 1})</td>
+    <td class="num">${fmt(akumulasi)}</td>
+  </tr>`;
+}
+
+/* =====================================================
+   RENDER SEMUA
+   ===================================================== */
+function renderAll(){
+  renderDaftar();
+  renderHasil();
+  renderRincianHarian();
+  renderRincianBulanan();
+  renderRincianTahunan();
+  simpan();
+}
+
+/* =====================================================
+   INISIALISASI
+   ===================================================== */
+function init(){
+  muat();
+
+  const selBulan = $('bulan');
+  selBulan.innerHTML = BULAN
+    .map((b, i) => `<option value="${i}">${b}</option>`)
+    .join('');
+
+  selBulan.value      = state.bulan;
+  $('tahun').value    = state.tahun;
+  $('proyeksi').value = state.tahunProyeksi;
+
+  renderAll();
+}
+
+/* =====================================================
+   FUNGSI SIMPAN HASIL EDIT
+   ===================================================== */
+function simpanEdit(row){
+  const namaEl     = row.querySelector('[data-field="nama"]');
+  const jumlahEl   = row.querySelector('[data-field="jumlah"]');
+  const frekuensiEl= row.querySelector('[data-field="frekuensi"]');
+
+  const nama      = namaEl.value.trim();
+  const jumlah    = parseFloat(jumlahEl.value);
+  const frekuensi = frekuensiEl.value;
+
+  if (!nama || isNaN(jumlah) || jumlah <= 0){
+    alert('Isi nama dan jumlah pengeluaran dengan benar.');
+    (nama ? jumlahEl : namaEl).focus();
+    return;
+  }
+
+  const it = state.items.find(x => x.id === editingId);
+  if (it){
+    it.nama      = nama;
+    it.jumlah    = jumlah;
+    it.frekuensi = frekuensi;
+  }
+  editingId = null;
+  renderAll();
+}
+
+function batalEdit(){
+  editingId = null;
+  renderDaftar();
+}
+
+/* =====================================================
+   EVENT
+   ===================================================== */
+
+/* --- Tambah item --- */
+$('form').addEventListener('submit', e => {
+  e.preventDefault();
+  const nama      = $('nama').value.trim();
+  const jumlah    = parseFloat($('jumlah').value);
+  const frekuensi = $('frekuensi').value;
+
+  if (!nama || isNaN(jumlah) || jumlah <= 0){
+    alert('Isi nama dan jumlah pengeluaran dengan benar.');
+    return;
+  }
+
+  editingId = null; // keluar dari mode edit kalau ada
+  state.items.push({
+    id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    nama, jumlah, frekuensi
+  });
+
+  $('nama').value   = '';
+  $('jumlah').value = '';
+  $('nama').focus();
+  renderAll();
+});
+
+/* --- Klik di tabel daftar: edit / save / cancel / delete --- */
+$('daftar').addEventListener('click', e => {
+  /* Masuk mode edit */
+  const editBtn = e.target.closest('.btn-edit');
+  if (editBtn){
+    editingId = editBtn.dataset.id;
+    renderDaftar();
+    /* fokus otomatis ke input nama */
+    const nameInput = document.querySelector('tr.editing [data-field="nama"]');
+    if (nameInput){
+      nameInput.focus();
+      nameInput.select();
+    }
+    return;
+  }
+
+  /* Simpan perubahan */
+  const saveBtn = e.target.closest('.btn-save');
+  if (saveBtn){
+    simpanEdit(saveBtn.closest('tr'));
+    return;
+  }
+
+  /* Batal edit */
+  const cancelBtn = e.target.closest('.btn-cancel');
+  if (cancelBtn){
+    batalEdit();
+    return;
+  }
+
+  /* Hapus item (tombol ini tidak tampil saat baris dalam mode edit) */
+  const delBtn = e.target.closest('.del');
+  if (delBtn){
+    state.items = state.items.filter(it => it.id !== delBtn.dataset.id);
+    if (editingId === delBtn.dataset.id) editingId = null;
+    renderAll();
+  }
+});
+
+/* --- Keyboard shortcut saat mode edit --- */
+$('daftar').addEventListener('keydown', e => {
+  if (!editingId) return;
+  if (e.key === 'Enter'){
+    e.preventDefault();
+    const row = e.target.closest('tr.editing');
+    if (row) simpanEdit(row);
+  } else if (e.key === 'Escape'){
+    e.preventDefault();
+    batalEdit();
+  }
+});
+
+/* --- Hapus semua --- */
+$('reset').addEventListener('click', () => {
+  if (state.items.length === 0) return;
+  if (confirm('Hapus semua data pengeluaran?')){
+    state.items = [];
+    editingId = null;
+    renderAll();
+  }
+});
+
+/* --- Ubah pengaturan --- */
+$('bulan').addEventListener('change', e => {
+  state.bulan = parseInt(e.target.value);
+  renderAll();
+});
+
+$('tahun').addEventListener('input', e => {
+  const v = parseInt(e.target.value);
+  if (!isNaN(v) && v >= 2000 && v <= 2200){
+    state.tahun = v;
+    renderAll();
+  }
+});
+
+$('proyeksi').addEventListener('input', e => {
+  const v = parseInt(e.target.value);
+  if (!isNaN(v) && v >= 1 && v <= 50){
+    state.tahunProyeksi = v;
+    renderAll();
+  }
+});
+
+init();
+</script>
+</body>
+</html>
